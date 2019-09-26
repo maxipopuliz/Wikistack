@@ -3,19 +3,18 @@ const router=express.Router();
 const { addPage } = require("../views")
 const {Page}=require('../models')
 const {User}=require('../models')
+const { wikiPage } = require("../views")
+const { main } = require('../views')
 
-function toSlug(title){
-    return title.replace(/\s+/g, '_').replace(/\W/g, '');
-}
+
 
 router.get('/',async(req,res,next)=>{
-    // try{
-    //     const data= await User.findAll()
-    //     res.send(data.rows)
-    // }catch(err){
-    //     console.log(er
-    // }
-    res.send('it works')
+    try{
+        const pages = await Page.findAll()
+        res.send(main(pages))
+    }catch(err){
+        console.log(err)
+    }
 })
 
 router.post('/',async(req,res,next)=>{
@@ -31,7 +30,7 @@ router.post('/',async(req,res,next)=>{
 
     const page = new Page({
         title: req.body.title,
-        slug:toSlug(req.body.title),
+        slug: req.body.slug,
         content: req.body.content,
         status: req.body.status
       });
@@ -47,12 +46,38 @@ router.post('/',async(req,res,next)=>{
       try {
         await page.save();
         await user.save();
-        res.redirect('/');
-      } catch (error) { next(error) }
+        res.redirect(`/wiki/${page.slug}`);
+      } catch (error) { res.send('DOESNT work') }
 })
 
 router.get('/add',async(req,res)=>{
     res.send(addPage())
 })
+
+router.get('/:slug', async (req, res, next) => {
+  let page = 'did not work'
+  try{
+    let auth = 'dan';
+      page = await Page.findOne({
+      where: {
+        slug: req.params.slug
+      }
+    })
+    // if(page.userid === userId){
+      
+      user = await User.findOne({
+        where: {
+          id: page.id
+        }
+      })
+
+      auth = user.name
+    // }
+
+    res.send(wikiPage(page, auth));
+  } catch (error) {console.log("Testing Slug Failed")}
+});
+
+
 
 module.exports=router
